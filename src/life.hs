@@ -35,7 +35,7 @@ instance Show Cell where
         show Dead = "."
 
 countCellsAlive :: [Maybe Cell] -> Int
-countCellsAlive cs =  foldr (\c y -> toInt c + y) 0 cs
+countCellsAlive cs =  foldr ((+) . toInt)  0 cs
     where toInt Nothing = 0
           toInt (Just Dead) = 0
           toInt (Just Alive) = 1  
@@ -50,11 +50,11 @@ nextStateCell xxs i j
 
 coordinates :: [[a]] -> [[(a, Int, Int)]]
 coordinates xxs = map expandRow (expandTable xxs)
-    where   expandTable xxs = zipWith (\xs z -> (xs,z)) xxs [0..]
+    where   expandTable xxs = zipWith (,) xxs [0..]
             expandRow (xs,z) = zipWith (\x y -> (x,y,z)) xs [0..]
 
 mapTable :: (a -> b) -> [[a]] -> [[b]]
-mapTable f xxs = map (\xs -> map f xs) xxs
+mapTable f xxs = map (map f) xxs
 
 nextState :: [[Cell]] -> [[Cell]]
 nextState xxs = mapTable (\(_, x, y) -> nextStateCell xxs x y) (coordinates xxs)
@@ -64,7 +64,7 @@ nextState xxs = mapTable (\(_, x, y) -> nextStateCell xxs x y) (coordinates xxs)
 readStateFromFile :: String -> IO [[Cell]]
 readStateFromFile filename = do
         contents <- readFile filename
-        let     cellsString = map (\xs -> words xs) $ lines contents
+        let     cellsString = map words $ lines contents
         return (mapTable (\w -> read w :: Cell) cellsString)
 
 -- Display Cells panel
