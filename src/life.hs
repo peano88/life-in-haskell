@@ -59,6 +59,8 @@ mapTable f xxs = map (map f) xxs
 nextState :: [[Cell]] -> [[Cell]]
 nextState xxs = mapTable (\(_, x, y) -> nextStateCell xxs x y) (coordinates xxs)
 
+timeEvolution :: [[Cell]] -> Int -> [[[Cell]]]
+timeEvolution xxs t = reverse $ foldl (\xs _ -> (nextState $ head xs) : xs) [xxs] [1..t] 
 
 -- Read state from file
 readStateFromFile :: String -> IO [[Cell]]
@@ -68,15 +70,19 @@ readStateFromFile filename = do
         return (mapTable (\w -> read w :: Cell) cellsString)
 
 -- Display Cells panel
-displayPanel :: [[Cell]] -> String
-displayPanel xxs = foldl (\res row -> res ++ "\n" ++ show row) "" xxs
+displayFrame :: [[Cell]] -> IO ()
+displayFrame xxs = do
+                    threadDelay 75000 -- in 10^-6 second
+                    System.Process.callCommand "clear"
+                    putStrLn $ foldl (\res row -> res ++ "\n" ++ show row) "" xxs
+
+displayEvolution :: [[Cell]] -> Int -> IO ()
+displayEvolution xxs t = do
+                            let evolution = timeEvolution xxs t
+                            mapM_ displayFrame evolution 
 
 -- Main
 main = do
-        args <- getArgs
-        cells <- readStateFromFile $ head args 
-        putStrLn $ displayPanel cells
-        forever $ do
-                        threadDelay 1000000
-                        System.Process.callCommand "clear"
-                        putStrLn $ displayPanel $ nextState cells
+        (fileName : timeFrame : others) <- getArgs
+        cells <- readStateFromFile $ fileName 
+        displayEvolution cells (read timeFrame)
